@@ -64,8 +64,10 @@ if __name__ == "__main__":
 
     serial_label = ctk.CTkLabel(top_row, text="Serial Connection", font=ctk.CTkFont(size=16, weight="bold"))
     serial_label.pack(padx=16, pady=(8,8))
-    entry = ctk.CTkEntry(top_row, placeholder_text="Enter COM port (e.g., COM3)")
-    entry.pack(padx=16, pady=(0,8))
+
+    serial_button = ctk.CTkSegmentedButton(top_row, values=["COM1", "COM2", "COM3", "COM4"], fg_color="#CD1B2B", selected_color="#350A0A")
+    serial_button.pack(padx=16, pady=(0,8))
+
     connect_button = ctk.CTkButton(top_row, hover_color="#E9444F", fg_color="#CD1B2B", text="Connect")
     disconnect_button = ctk.CTkButton(top_row, hover_color="#E9444F", fg_color="#350A0A", text="Disconnect", state="disabled")
     connect_button.pack(side="left", padx=16)

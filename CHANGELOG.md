@@ -3,3 +3,6 @@ first commit
 
 v0.1
     Some changes to the UI, still non functioning.
+
+v0.1.1
+    Some changes to the UI, still non functioning.
