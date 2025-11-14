@@ -15,5 +15,8 @@
     - Multiple graphs now are working fully
     - Added graph data delete button
     - graph now shows data name, title and unit of measurement
-    - CHANGELOG.md lacked markdown indicators, now does
+    - CHANGELOG.md lacked markdown indicators now does
     - Data sampling basically works with some bugs
+
+## v0.3.1
+    - Removed Herobrine
