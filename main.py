@@ -1,10 +1,15 @@
 import customtkinter as ctk
 from PIL import Image
-import subprocess, sys
+import subprocess, sys, os
 import threading
 from tkinter import messagebox
 from sampler import Sampler as slr
+from graph import Grapher as gr
     
+# Declare globals at module level
+sampler_thread = None
+data_indicator_job = None  # Add this for the flashing animation
+
 if __name__ == "__main__":
 
     # CTK appearance
@@ -15,7 +20,7 @@ if __name__ == "__main__":
     app = ctk.CTk()
     app.title("Art Beerkart Manager")
     app.iconbitmap("beer.ico")
-    app.geometry("750x450")
+    app.geometry("750x470")
     app.resizable(False, False)
 
     # The top frame with the title and logo
@@ -80,7 +85,6 @@ if __name__ == "__main__":
     refresh_button.pack(padx=16, pady=(0,8))
 
      # Segmented button for available serial ports
-
     serial_button = ctk.CTkSegmentedButton(top_row, values=slr().list_available_ports(), fg_color="#CD1B2B", selected_color="#350A0A")
     serial_button.pack(padx=16, pady=(0,8))
 
@@ -95,12 +99,19 @@ if __name__ == "__main__":
         status_label.configure(text="Status: Connected")
         connect_button.configure(state="disabled", fg_color="#350A0A")
         disconnect_button.configure(state="normal", fg_color="#CD1B2B")
-    
+        # Start checking for data
+
     def disconnect_serial():
+        global data_indicator_job
         slr().disconnect()
         status_label.configure(text="Status: Disconnected")
         connect_button.configure(state="normal", fg_color="#CD1B2B")
         disconnect_button.configure(state="disabled", fg_color="#350A0A")
+        # Cancel any pending flash animation
+        if data_indicator_job:
+            app.after_cancel(data_indicator_job)
+        # Reset button color
+        serial_button.configure(selected_color="#350A0A")
 
      # Status label + Connect / Disconnect buttons
 
@@ -151,25 +162,21 @@ if __name__ == "__main__":
 
     # Global sampler instance and thread
     sampler_instance = slr()
-    sampler_thread = None
-    stop_sampling = False
 
     # Start and Stop Sampler button functions
     def start_sampler(start_btn, stop_btn, sampler_label):
-        global sampler_thread, stop_sampling
+        global sampler_thread
         port = serial_button.get()
         if port and port != "No Ports":
             try:
                 if not sampler_instance.is_connected():
                     sampler_instance.connect(port)
                 
-                stop_sampling = False
-                
                 def run_sampler():
                     try:
-                        sampler_instance.write_file("START")
+                        sampler_instance.write_file()
                     except Exception as e:
-                        sampler_label.configure(text=f"Error: {str(e)}")
+                        messagebox.showerror("Sampler Error", f"Error: {str(e)}")
                 
                 sampler_thread = threading.Thread(target=run_sampler, daemon=True)
                 sampler_thread.start()
@@ -183,23 +190,23 @@ if __name__ == "__main__":
     def stop_sampler(stop_btn, start_btn, sampler_label):
         global stop_sampling
         port = serial_button.get()
+
         if port and port != "No Ports":
             try:
                 stop_sampling = True
-                
                 def run_stop():
-                    print("Xddddd")
-                    # try:
-                    sampler_instance.write_file("STOP")
-                    start_btn.configure(state="normal", fg_color="#CD1B2B", text="Start Sampler")
-                    stop_btn.configure(state="disabled", fg_color="#350A0A")
-                    sampler_label.configure(text="Status: Stopped")
-                    # except Exception as e:
-                    #     print("Error stopping sampler:", e)
-                    #     messagebox.showerror("Sampler Error", f"Could not stop sampler on {port}:\n{str(e)}")
+                    try:
+                        if not sampler_instance.is_connected():
+                            sampler_instance.connect(port)
+                        start_btn.configure(state="normal", fg_color="#CD1B2B", text="Start Sampler")
+                        stop_btn.configure(state="disabled", fg_color="#350A0A")
+                        sampler_label.configure(text="Status: Stopped")
+                        sampler_instance.write_file()
+                    except Exception as e:
+                        messagebox.showerror("Sampler Error", f"Could not stop sampler on {port}:\n{str(e)}")
                 
-                stop_thread = threading.Thread(target=run_stop, daemon=True)
-                stop_thread.start()
+                sampler_thread = threading.Thread(target=run_stop, daemon=True)
+                sampler_thread.start()
             except Exception as e:
                 messagebox.showerror("Sampler Error", f"Could not stop sampler on {port}:\n{str(e)}")
 
@@ -230,9 +237,23 @@ if __name__ == "__main__":
     start_button.pack(side="left", padx=16)
     stop_button.pack(side="left")
 
+    def open_graphs():
+        for file in os.listdir("."):
+            if os.path.isfile(os.path.join(".", file)) and file.endswith(".txt"):
+                subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "graph.py"), file])
+
+    def delete_graphs():
+        bogz = messagebox.askquestion("Graph deletion", "This action will delete all graph files and cannot be undone. Are you sure you want to proceed?", icon='warning')
+        if bogz == 'yes':
+            for file in os.listdir("."):
+                if os.path.isfile(os.path.join(".", file)) and file.endswith(".txt"):
+                    os.remove(os.path.join(".", file))
+    
     # Live Graph button
-    button = ctk.CTkButton(right_col, hover_color="#E9444F",  fg_color="#CD1B2B", text="Live Graph(s)", command=lambda: subprocess.Popen([sys.executable, 'graph.py']))
+    button = ctk.CTkButton(right_col, hover_color="#E9444F",  fg_color="#CD1B2B", text="Live Graph(s)", command=open_graphs)
     button.pack(padx=16, pady=16)
+    button = ctk.CTkButton(right_col, hover_color="#E9444F",  fg_color="#CD1B2B", text="Delete Graph Files", command=delete_graphs)
+    button.pack(padx=16, pady=0)
 
 
 app.mainloop()

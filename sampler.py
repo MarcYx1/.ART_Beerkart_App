@@ -1,5 +1,7 @@
 import serial
 import serial.tools.list_ports
+import time
+from datetime import datetime
 
 class Sampler:
     """Class to manage the sampler device connection and operations."""
@@ -30,25 +32,26 @@ class Sampler:
         """List all available serial ports."""
         return [port.device for port in serial.tools.list_ports.comports()]
     
-    def write_file(self, data):
+    def write_file(self):
+        time_rn = datetime.now().strftime("%Y%m%d_%H%M%S")
+        start_time = time.time()
         if not self.is_connected():
             raise ConnectionError("Sampler device is not connected.")
         
         try:
-            with open("graph_data.txt", "a") as file:
-                while self.is_connected():
-                    if self.serial_connection.in_waiting > 0:
-                        data = self.serial_connection.readline().decode('utf-8').strip()
-                        if data:
-                            # Validate format: number,number
-                            parts = data.split(',')
-                            if len(parts) == 2:
-                                try:
-                                    float(parts[0])
-                                    float(parts[1])
-                                    file.write(data + "\n")
+            while self.is_connected():
+                if self.serial_connection.in_waiting > 0:
+                    data = self.serial_connection.readline().decode('utf-8').strip()
+                    if data:
+                        # Validate format: string(id),number,number
+                        parts = data.split(';')
+                        try:
+                            for i in parts:
+                                subparts = i.split('=')
+                                with open(f'{subparts[0]}_{time_rn}.txt', 'a') as file:# pl.: voltage
+                                    file.write(f'{round(time.time() - start_time, 3)},{subparts[1]}' + "\n")
                                     file.flush()
-                                except ValueError:
-                                    pass
+                        except ValueError:
+                            pass
         except Exception as e:
             print(f"Error writing to file: {e}")
