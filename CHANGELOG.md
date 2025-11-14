@@ -6,3 +6,6 @@ v0.1
 
 v0.1.1
     Some changes to the UI, still non functioning.
+
+v0.2
+    Serial now works with some bugs that needs fixing

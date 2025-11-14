@@ -1,6 +1,9 @@
 import customtkinter as ctk
 from PIL import Image
-import subprocess, sys, os
+import subprocess, sys
+import threading
+from tkinter import messagebox
+from sampler import Sampler as slr
     
 if __name__ == "__main__":
 
@@ -57,19 +60,56 @@ if __name__ == "__main__":
     left_col.grid_rowconfigure(1, weight=1)
     left_col.grid_columnconfigure(0, weight=1)
     
+    def refresh_ports():
+        ports = slr().list_available_ports()
+        serial_button.configure(values=ports)
+        if ports:
+            serial_button.set(ports[0])
+        else:
+            serial_button.set("No Ports")
 
     # Top row: Serial Connection widgets
     top_row = ctk.CTkFrame(left_col)
     top_row.grid(row=0, column=0, sticky="nsew", padx=0, pady=(0,4))
 
+    # COM / serial ports
     serial_label = ctk.CTkLabel(top_row, text="Serial Connection", font=ctk.CTkFont(size=16, weight="bold"))
     serial_label.pack(padx=16, pady=(8,8))
 
-    serial_button = ctk.CTkSegmentedButton(top_row, values=["COM1", "COM2", "COM3", "COM4"], fg_color="#CD1B2B", selected_color="#350A0A")
+    refresh_button = ctk.CTkButton(top_row, hover_color="#E9444F", fg_color="#CD1B2B", text="Refresh Ports", command=refresh_ports)
+    refresh_button.pack(padx=16, pady=(0,8))
+
+     # Segmented button for available serial ports
+
+    serial_button = ctk.CTkSegmentedButton(top_row, values=slr().list_available_ports(), fg_color="#CD1B2B", selected_color="#350A0A")
     serial_button.pack(padx=16, pady=(0,8))
 
-    connect_button = ctk.CTkButton(top_row, hover_color="#E9444F", fg_color="#CD1B2B", text="Connect")
-    disconnect_button = ctk.CTkButton(top_row, hover_color="#E9444F", fg_color="#350A0A", text="Disconnect", state="disabled")
+    def connect_serial():
+        port = serial_button.get()
+        try:
+            slr().connect(port)
+        except Exception as e:
+            messagebox.showerror("Connection Error", f"Could not connect to {port}:\n{str(e)}")
+            return
+
+        status_label.configure(text="Status: Connected")
+        connect_button.configure(state="disabled", fg_color="#350A0A")
+        disconnect_button.configure(state="normal", fg_color="#CD1B2B")
+    
+    def disconnect_serial():
+        slr().disconnect()
+        status_label.configure(text="Status: Disconnected")
+        connect_button.configure(state="normal", fg_color="#CD1B2B")
+        disconnect_button.configure(state="disabled", fg_color="#350A0A")
+
+     # Status label + Connect / Disconnect buttons
+
+    status_label = ctk.CTkLabel(top_row, text="Status: Disconnected", font=ctk.CTkFont(size=12))
+    status_label.pack(padx=16, pady=(0,8))
+
+    connect_button = ctk.CTkButton(top_row, hover_color="#E9444F", fg_color="#CD1B2B", text="Connect", command=connect_serial)
+    disconnect_button = ctk.CTkButton(top_row, hover_color="#E9444F", fg_color="#350A0A", text="Disconnect", state="disabled", command=disconnect_serial)
+    
     connect_button.pack(side="left", padx=16)
     disconnect_button.pack(side="right", padx=16)
 
@@ -109,36 +149,59 @@ if __name__ == "__main__":
     rate_entry.pack(side="left", padx=(0,8))
 
 
-    # keep Popen handle so we can stop the process later
-    sampler_proc = None
+    # Global sampler instance and thread
+    sampler_instance = slr()
+    sampler_thread = None
+    stop_sampling = False
 
     # Start and Stop Sampler button functions
     def start_sampler(start_btn, stop_btn, sampler_label):
-
-        global sampler_proc
-        
-        if sampler_proc is None or sampler_proc.poll() is not None:
-            sampler_proc = subprocess.Popen([sys.executable, 'sampler.py'])
-            start_btn.configure(state="disabled", fg_color="#350A0A", text="Sampler Running")
-            stop_btn.configure(state="normal", fg_color="#CD1B2B")
-            sampler_label.configure(text="Status: Running")
+        global sampler_thread, stop_sampling
+        port = serial_button.get()
+        if port and port != "No Ports":
+            try:
+                if not sampler_instance.is_connected():
+                    sampler_instance.connect(port)
+                
+                stop_sampling = False
+                
+                def run_sampler():
+                    try:
+                        sampler_instance.write_file("START")
+                    except Exception as e:
+                        sampler_label.configure(text=f"Error: {str(e)}")
+                
+                sampler_thread = threading.Thread(target=run_sampler, daemon=True)
+                sampler_thread.start()
+                
+                start_btn.configure(state="disabled", fg_color="#350A0A", text="Sampler Running")
+                stop_btn.configure(state="normal", fg_color="#CD1B2B")
+                sampler_label.configure(text="Status: Running")
+            except Exception as e:
+                messagebox.showerror("Sampler Error", f"Could not start sampler on {port}:\n{str(e)}")
 
     def stop_sampler(stop_btn, start_btn, sampler_label):
-
-        global sampler_proc
-
-        if sampler_proc and sampler_proc.poll() is None:
-            # ask the process to terminate, wait a bit, then kill if still alive
-            sampler_proc.terminate()
+        global stop_sampling
+        port = serial_button.get()
+        if port and port != "No Ports":
             try:
-                sampler_proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                sampler_proc.kill()
-                sampler_proc.wait()
-        sampler_proc = None
-        start_btn.configure(state="normal", fg_color="#CD1B2B", text="Start Sampler")
-        stop_btn.configure(state="disabled", fg_color="#350A0A")
-        sampler_label.configure(text="Status: Stopped")
+                stop_sampling = True
+                
+                def run_stop():
+                    print("Xddddd")
+                    # try:
+                    sampler_instance.write_file("STOP")
+                    start_btn.configure(state="normal", fg_color="#CD1B2B", text="Start Sampler")
+                    stop_btn.configure(state="disabled", fg_color="#350A0A")
+                    sampler_label.configure(text="Status: Stopped")
+                    # except Exception as e:
+                    #     print("Error stopping sampler:", e)
+                    #     messagebox.showerror("Sampler Error", f"Could not stop sampler on {port}:\n{str(e)}")
+                
+                stop_thread = threading.Thread(target=run_stop, daemon=True)
+                stop_thread.start()
+            except Exception as e:
+                messagebox.showerror("Sampler Error", f"Could not stop sampler on {port}:\n{str(e)}")
 
     # place Start + Stop buttons side-by-side
     buttons_frame = ctk.CTkFrame(right_col, fg_color="transparent")
