@@ -4,7 +4,6 @@ import subprocess, sys, os
 import threading
 from tkinter import messagebox
 from sampler import Sampler as slr
-from graph import Grapher as gr
     
 # Declare globals at module level
 sampler_thread = None
@@ -20,7 +19,7 @@ if __name__ == "__main__":
     app = ctk.CTk()
     app.title("Art Beerkart Manager")
     app.iconbitmap("beer.ico")
-    app.geometry("750x470")
+    app.geometry("770x520")
     app.resizable(False, False)
 
     # The top frame with the title and logo
@@ -54,9 +53,9 @@ if __name__ == "__main__":
     content_frame.grid_columnconfigure(1, weight=1)
 
     # Left column and Right column
-    left_col = ctk.CTkFrame(content_frame)
+    left_col = ctk.CTkFrame(content_frame, fg_color="transparent")
     left_col.grid(row=0, column=0, padx=(0, 6), sticky="nsew")
-    right_col = ctk.CTkFrame(content_frame)
+    right_col = ctk.CTkFrame(content_frame, fg_color="#2B2B2B")
     right_col.grid(row=0, column=1, padx=(6, 0), sticky="nsew")
 
     # LEft coloumn content (split into two rows)
@@ -65,6 +64,7 @@ if __name__ == "__main__":
     left_col.grid_rowconfigure(1, weight=1)
     left_col.grid_columnconfigure(0, weight=1)
     
+    # Name implies, refreshes the COM ports list in the segmented button
     def refresh_ports():
         ports = slr().list_available_ports()
         serial_button.configure(values=ports)
@@ -74,7 +74,7 @@ if __name__ == "__main__":
             serial_button.set("No Ports")
 
     # Top row: Serial Connection widgets
-    top_row = ctk.CTkFrame(left_col)
+    top_row = ctk.CTkFrame(left_col, fg_color="#2B2B2B")
     top_row.grid(row=0, column=0, sticky="nsew", padx=0, pady=(0,4))
 
     # COM / serial ports
@@ -88,6 +88,7 @@ if __name__ == "__main__":
     serial_button = ctk.CTkSegmentedButton(top_row, values=slr().list_available_ports(), fg_color="#CD1B2B", selected_color="#350A0A")
     serial_button.pack(padx=16, pady=(0,8))
 
+    # Name implies, connects to the selected serial port
     def connect_serial():
         port = serial_button.get()
         try:
@@ -101,9 +102,14 @@ if __name__ == "__main__":
         disconnect_button.configure(state="normal", fg_color="#CD1B2B")
         # Start checking for data
 
+    # Name implies, disconnects from the serial port
     def disconnect_serial():
+
         global data_indicator_job
-        slr().disconnect()
+
+        stop_sampler(stop_button, start_button, sampler_label)
+
+        sampler_instance.disconnect()
         status_label.configure(text="Status: Disconnected")
         connect_button.configure(state="normal", fg_color="#CD1B2B")
         disconnect_button.configure(state="disabled", fg_color="#350A0A")
@@ -114,7 +120,6 @@ if __name__ == "__main__":
         serial_button.configure(selected_color="#350A0A")
 
      # Status label + Connect / Disconnect buttons
-
     status_label = ctk.CTkLabel(top_row, text="Status: Disconnected", font=ctk.CTkFont(size=12))
     status_label.pack(padx=16, pady=(0,8))
 
@@ -125,7 +130,7 @@ if __name__ == "__main__":
     disconnect_button.pack(side="right", padx=16)
 
     # Bottom row: placeholder for additional controls
-    bottom_row = ctk.CTkFrame(left_col)
+    bottom_row = ctk.CTkFrame(left_col, fg_color="#2B2B2B")
     bottom_row.grid(row=1, column=0, sticky="nsew", padx=0, pady=(4,0))
 
     bottom_label = ctk.CTkLabel(bottom_row, text="Power limit", font=ctk.CTkFont(size=14, weight="bold"))
@@ -135,13 +140,39 @@ if __name__ == "__main__":
     controls_frame = ctk.CTkFrame(bottom_row, fg_color="transparent")
     controls_frame.pack(fill="x", padx=16)
 
-    power_slider = ctk.CTkSlider(controls_frame, button_color="#CD1B2B", hover="#E9444F")
+    # When slider changes, update entry
+    def power_slider_event(value):
+        power_entry.delete(0, ctk.END)
+        power_entry.insert(0, str(int(value)))
+
+    # Send power data
+    def power_data_send():
+        try:
+            # I already have a layer that prevents sending non numbers or negative numbers but just in case this checks if the entry is a number and higher than 0
+            # checks if it's a valid percentage (0-100)
+            if power_entry.get().isdigit() and 0 <= int(power_entry.get()) <= 100:
+                sampler_instance.send_data("power", power_entry.get())
+            else:
+                messagebox.showerror("Input Error", "Please enter a valid power percentage (0-100).")
+        except Exception as e:
+            messagebox.showerror("Send Error", f"Could not send power data:\n{str(e)}")
+    
+    power_slider = ctk.CTkSlider(controls_frame, from_=0, to=100, button_color="#CD1B2B", hover="#E9444F", command=power_slider_event)
     power_slider.pack(side="left", padx=(0,8), fill="x", expand=True)
 
-    power_entry = ctk.CTkEntry(controls_frame, placeholder_text="Power", width=80, height=28)
+    # First layer of checking the entry if it contains a valid value, if a character is present delete the whole entry
+    def power_entry_event(self):
+        val = power_entry.get()
+        if val.isdigit() and 0 <= int(val) <= 100:
+            power_slider.set(int(val))
+        else:  # Remove last char if invalid
+            power_entry.delete(0, ctk.END)
+
+    power_entry = ctk.CTkEntry(controls_frame, placeholder_text="Power (%)", width=80, height=28)
+    power_entry.bind("<KeyRelease>", power_entry_event)
     power_entry.pack(side="left", padx=(0,8))
 
-    send_button = ctk.CTkButton(bottom_row, hover_color="#E9444F", fg_color="#CD1B2B", text="Send")
+    send_button = ctk.CTkButton(bottom_row, hover_color="#E9444F", fg_color="#CD1B2B", text="Send", command=power_data_send)
     send_button.pack(padx=16, pady=12)
 
     # Right column content
@@ -153,11 +184,41 @@ if __name__ == "__main__":
     controls_frame = ctk.CTkFrame(right_col, fg_color="transparent")
     controls_frame.pack(fill="x", padx=16, anchor="n")
 
-    rate_slider = ctk.CTkSlider(controls_frame, button_color="#CD1B2B", hover="#E9444F")
-    rate_slider.pack(side="left", padx=(0,8), expand=True)
+    # When slider changes, update entry
+    def rate_slider_event(value):
+        rate_entry.delete(0, ctk.END)
+        rate_entry.insert(0, str(int(value)))
 
+    # Send rate data
+    def rate_data_send():
+        val = rate_entry.get()
+        try:
+            if val.isdigit() and int(val) <= 1000 and int(val) >= 1:
+                sampler_instance.send_data("rate", rate_entry.get())
+            else:
+                messagebox.showerror("Input Error", "Please enter a valid rate percentage (1-1000).")
+        except Exception as e:
+            messagebox.showerror("Send Error", f"Could not send rate data:\n{str(e)}")
+    
+    global rate_slider
+    rate_slider = ctk.CTkSlider(controls_frame, from_=0, to=1000, button_color="#CD1B2B", hover="#E9444F", command=rate_slider_event)
+    rate_slider.pack(side="left", padx=(0,8), fill="x", expand=True)
+
+    # First layer of checking the entry if it contains a valid value, if a character is present delete the whole entry
+    def rate_entry_event(self):
+        val = rate_entry.get()
+        if val.isdigit() and 0 <= int(val) <= 1000:
+            rate_slider.set(int(val))
+        else:  # Remove last char if invalid
+            rate_entry.delete(0, ctk.END)
+
+    global rate_entry
     rate_entry = ctk.CTkEntry(controls_frame, placeholder_text="Rate (ms)", width=80, height=28)
+    rate_entry.bind("<KeyRelease>", rate_entry_event)
     rate_entry.pack(side="left", padx=(0,8))
+
+    send_button = ctk.CTkButton(right_col, hover_color="#E9444F", fg_color="#CD1B2B", text="Send", command=rate_data_send)
+    send_button.pack(pady=16, padx=(0,8))
 
 
     # Global sampler instance and thread
@@ -177,7 +238,8 @@ if __name__ == "__main__":
                         sampler_instance.write_file()
                     except Exception as e:
                         messagebox.showerror("Sampler Error", f"Error: {str(e)}")
-                
+
+                # Start the sampler thread
                 sampler_thread = threading.Thread(target=run_sampler, daemon=True)
                 sampler_thread.start()
                 
@@ -188,27 +250,12 @@ if __name__ == "__main__":
                 messagebox.showerror("Sampler Error", f"Could not start sampler on {port}:\n{str(e)}")
 
     def stop_sampler(stop_btn, start_btn, sampler_label):
-        global stop_sampling
-        port = serial_button.get()
-
-        if port and port != "No Ports":
-            try:
-                stop_sampling = True
-                def run_stop():
-                    try:
-                        if not sampler_instance.is_connected():
-                            sampler_instance.connect(port)
-                        start_btn.configure(state="normal", fg_color="#CD1B2B", text="Start Sampler")
-                        stop_btn.configure(state="disabled", fg_color="#350A0A")
-                        sampler_label.configure(text="Status: Stopped")
-                        sampler_instance.write_file()
-                    except Exception as e:
-                        messagebox.showerror("Sampler Error", f"Could not stop sampler on {port}:\n{str(e)}")
-                
-                sampler_thread = threading.Thread(target=run_stop, daemon=True)
-                sampler_thread.start()
-            except Exception as e:
-                messagebox.showerror("Sampler Error", f"Could not stop sampler on {port}:\n{str(e)}")
+        global sampler_thread
+        if sampler_thread and sampler_thread.is_alive():
+            sampler_thread.join(timeout=1)
+        start_btn.configure(state="normal", fg_color="#CD1B2B", text="Start Sampler")
+        stop_btn.configure(state="disabled", fg_color="#350A0A")
+        sampler_label.configure(text="Status: Stopped")
 
     # place Start + Stop buttons side-by-side
     buttons_frame = ctk.CTkFrame(right_col, fg_color="transparent")

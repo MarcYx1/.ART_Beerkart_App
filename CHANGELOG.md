@@ -20,3 +20,11 @@
 
 ## v0.3.1
     - Removed Herobrine
+
+## v0.4
+    - Sampler stop button now actually stops the sampler
+    - Disconnect button also stops sampler
+    - Added missing send button from sampling rate (lol?)
+    - Powerlimit sending over serial is now implemented. Uses the same format it recieves data e.g.: f'power={percentage}'
+    - Rate sending over serial is now implemented. Uses the same format it recieves data e.g.: f'rate={ms}'
+    - UI beauty changes, removed the boxes around the two rows in the left coloumn

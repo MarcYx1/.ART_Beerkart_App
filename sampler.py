@@ -55,3 +55,9 @@ class Sampler:
                             pass
         except Exception as e:
             print(f"Error writing to file: {e}")
+    
+    def send_data(self,type, data):
+        """Send data to the sampler device."""
+        if not self.is_connected():
+            raise ConnectionError("Sampler device is not connected.")
+        self.serial_connection.write(f'{type}={data}\n'.encode('utf-8'))

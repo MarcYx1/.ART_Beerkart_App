@@ -33,7 +33,7 @@ class Grapher:
                 if len(line) > 1:
                     x, y = line.split(',')
                     try:
-                        asd = y.split('~')
+                        asd = y.split('_')
                         xs.append(float(x))
                         ys.append(float(asd[0]))
                     except:
