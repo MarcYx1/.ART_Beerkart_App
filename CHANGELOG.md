@@ -28,3 +28,6 @@
     - Powerlimit sending over serial is now implemented. Uses the same format it recieves data e.g.: f'power={percentage}'
     - Rate sending over serial is now implemented. Uses the same format it recieves data e.g.: f'rate={ms}'
     - UI beauty changes, removed the boxes around the two rows in the left coloumn
+
+## V0.4.1
+    - Remove Herobrine
