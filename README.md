@@ -11,11 +11,13 @@
     - Maybe a check graph button next to live graph(s) which allows user to choose previous graphs to show
     - ✓ ~~Pause sampler button~~
     - .xlsx export
-    - **Open Graph(s)** button may ask user which graph files to open and indicate which are live
-    - **Delete Graph Files** button may ask user which graph files to delete, disallow deletion of live files
+    - WIP: **Open Graph(s)** button may ask user which graph files to open and indicate which are live
+    - WIP: **Delete Graph Files** button may ask user which graph files to delete, disallow deletion of live files
+    - WIP: Light theme
 
 ### BUGS:
     - ~~Sampler is not stopped by the sample stop button~~
     - Sometimes the data line gets out of phase and the name of a file starts at the wrong character
     - ~~Disconnect button does not stop sampler either~~
-    - Not really a bug but: sampler needs to be connected to send power data, it should be unrelated to sampler running.
+    - ~~Not really a bug but: sampler needs to be connected to send power data, it should be unrelated to sampler running.~~ **NOTE: I haven't been able to recreate this bug ever since, I do not know what the issue was since the script has error handling that will just refuse to write the file incase the format is incorrect.**
+    - Light mode is buggy, I should've used styling instead of hardcoding colors

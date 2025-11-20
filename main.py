@@ -2,7 +2,7 @@ import customtkinter as ctk
 from PIL import Image
 import subprocess, sys, os
 import threading
-from tkinter import messagebox
+import tkinter as tk
 from sampler import Sampler as slr
     
 # Declare globals at module level
@@ -12,18 +12,45 @@ data_indicator_job = None  # Add this for the flashing animation
 if __name__ == "__main__":
 
     # CTK appearance
-    ctk.set_appearance_mode("System")
-    ctk.set_default_color_theme("blue")
+    ctk.set_appearance_mode("Dark")
+    ctk.set_default_color_theme("./assets/ART_theme.json")
+
+    
+    def color_mode(type):
+        if type == "Dark":
+            ctk.set_appearance_mode("Dark")
+            right_col_top.configure(fg_color="#2B2B2B")
+            right_col_bottom.configure(fg_color="#2B2B2B")
+            top_row.configure(fg_color="#2B2B2B")
+            bottom_row.configure(fg_color="#2B2B2B")
+            power_entry.configure(fg_color="#3A3A3A")
+            color_button.configure(
+                image = ctk.CTkImage(Image.open("./assets/light_mode.png"), size=(24, 24)),
+                hover_color="#969696",
+                command=lambda: color_mode("Light")
+            )
+        elif type == "Light":
+            ctk.set_appearance_mode("Light")
+            right_col_top.configure(fg_color="#E4E4E4")
+            right_col_bottom.configure(fg_color="#E4E4E4")
+            top_row.configure(fg_color="#E4E4E4")
+            bottom_row.configure(fg_color="#E4E4E4")
+            power_entry.configure(fg_color="#3A3A3A")
+            color_button.configure(
+                image = ctk.CTkImage(Image.open("./assets/dark_mode.png"), size=(24, 24)),
+                hover_color="#5F5F5F",
+                command=lambda: color_mode("Dark")
+            )
 
     # CTK itself
     app = ctk.CTk()
     app.title("Art Beerkart Manager")
-    app.iconbitmap("beer.ico")
-    app.geometry("770x520")
+    app.iconbitmap("./assets/beer.ico")
+    app.geometry("770x565")
     app.resizable(False, False)
 
     # The top frame with the title and logo
-    top_frame = ctk.CTkFrame(app, fg_color="#CD1B2B", height=64)
+    top_frame = ctk.CTkFrame(app, height=64, fg_color="#CD1B2B")
     top_frame.pack(fill="x", side="top", padx=10, pady=10)
     top_frame.grid_columnconfigure(0, weight=1)
     top_frame.grid_columnconfigure(1, weight=0)
@@ -36,7 +63,7 @@ if __name__ == "__main__":
                     font=ctk.CTkFont(size=20, weight="bold"))
     
     # Logo
-    pil_img = Image.open("Art_logo.png")
+    pil_img = Image.open("./assets/Art_logo.png")
     logo_image = ctk.CTkImage(pil_img, size=(93, 48))
     img_label = ctk.CTkLabel(top_frame, image=logo_image, text="")
     img_label.image = logo_image  # keep reference
@@ -55,8 +82,14 @@ if __name__ == "__main__":
     # Left column and Right column
     left_col = ctk.CTkFrame(content_frame, fg_color="transparent")
     left_col.grid(row=0, column=0, padx=(0, 6), sticky="nsew")
-    right_col = ctk.CTkFrame(content_frame, fg_color="#2B2B2B")
+    right_col = ctk.CTkFrame(content_frame, fg_color="transparent")
     right_col.grid(row=0, column=1, padx=(6, 0), sticky="nsew")
+
+    right_col_top = ctk.CTkFrame(right_col)
+    right_col_top.grid(row=0, column=0, sticky="ew", padx=0, pady=(0,4))
+
+    right_col_bottom = ctk.CTkFrame(right_col)
+    right_col_bottom.grid(row=1, column=0, sticky="nsew", padx=0, pady=(4,0))
 
     # LEft coloumn content (split into two rows)
 
@@ -74,18 +107,18 @@ if __name__ == "__main__":
             serial_button.set("No Ports")
 
     # Top row: Serial Connection widgets
-    top_row = ctk.CTkFrame(left_col, fg_color="#2B2B2B")
+    top_row = ctk.CTkFrame(left_col)
     top_row.grid(row=0, column=0, sticky="nsew", padx=0, pady=(0,4))
 
     # COM / serial ports
     serial_label = ctk.CTkLabel(top_row, text="Serial Connection", font=ctk.CTkFont(size=16, weight="bold"))
     serial_label.pack(padx=16, pady=(8,8))
 
-    refresh_button = ctk.CTkButton(top_row, hover_color="#E9444F", fg_color="#CD1B2B", text="Refresh Ports", command=refresh_ports)
+    refresh_button = ctk.CTkButton(top_row, text="Refresh Ports", command=refresh_ports)
     refresh_button.pack(padx=16, pady=(0,8))
 
      # Segmented button for available serial ports
-    serial_button = ctk.CTkSegmentedButton(top_row, values=slr().list_available_ports(), fg_color="#CD1B2B", selected_color="#350A0A")
+    serial_button = ctk.CTkSegmentedButton(top_row, values=slr().list_available_ports(), selected_color="#350A0A")
     serial_button.pack(padx=16, pady=(0,8))
 
     # Name implies, connects to the selected serial port
@@ -94,12 +127,13 @@ if __name__ == "__main__":
         try:
             slr().connect(port)
         except Exception as e:
-            messagebox.showerror("Connection Error", f"Could not connect to {port}:\n{str(e)}")
+            tk.messagebox.showerror("Connection Error", f"Could not connect to {port}:\n{str(e)}")
             return
 
         status_label.configure(text="Status: Connected")
         connect_button.configure(state="disabled", fg_color="#350A0A")
         disconnect_button.configure(state="normal", fg_color="#CD1B2B")
+        serial_button.configure(state="disabled")
         # Start checking for data
 
     # Name implies, disconnects from the serial port
@@ -118,19 +152,20 @@ if __name__ == "__main__":
             app.after_cancel(data_indicator_job)
         # Reset button color
         serial_button.configure(selected_color="#350A0A")
+        serial_button.configure(state="normal")
 
      # Status label + Connect / Disconnect buttons
     status_label = ctk.CTkLabel(top_row, text="Status: Disconnected", font=ctk.CTkFont(size=12))
     status_label.pack(padx=16, pady=(0,8))
 
-    connect_button = ctk.CTkButton(top_row, hover_color="#E9444F", fg_color="#CD1B2B", text="Connect", command=connect_serial)
-    disconnect_button = ctk.CTkButton(top_row, hover_color="#E9444F", fg_color="#350A0A", text="Disconnect", state="disabled", command=disconnect_serial)
+    connect_button = ctk.CTkButton(top_row, text="Connect", command=connect_serial)
+    disconnect_button = ctk.CTkButton(top_row, fg_color="#350A0A", text="Disconnect", state="disabled", command=disconnect_serial)
     
     connect_button.pack(side="left", padx=16)
     disconnect_button.pack(side="right", padx=16)
 
     # Bottom row: placeholder for additional controls
-    bottom_row = ctk.CTkFrame(left_col, fg_color="#2B2B2B")
+    bottom_row = ctk.CTkFrame(left_col)
     bottom_row.grid(row=1, column=0, sticky="nsew", padx=0, pady=(4,0))
 
     bottom_label = ctk.CTkLabel(bottom_row, text="Power limit", font=ctk.CTkFont(size=14, weight="bold"))
@@ -153,11 +188,11 @@ if __name__ == "__main__":
             if power_entry.get().isdigit() and 0 <= int(power_entry.get()) <= 100:
                 sampler_instance.send_data("power", power_entry.get())
             else:
-                messagebox.showerror("Input Error", "Please enter a valid power percentage (0-100).")
+                tk.messagebox.showerror("Input Error", "Please enter a valid power percentage (0-100).")
         except Exception as e:
-            messagebox.showerror("Send Error", f"Could not send power data:\n{str(e)}")
+            tk.messagebox.showerror("Send Error", f"Could not send power data:\n{str(e)}")
     
-    power_slider = ctk.CTkSlider(controls_frame, from_=0, to=100, button_color="#CD1B2B", hover="#E9444F", command=power_slider_event)
+    power_slider = ctk.CTkSlider(controls_frame, from_=0, to=100, command=power_slider_event)
     power_slider.pack(side="left", padx=(0,8), fill="x", expand=True)
 
     # First layer of checking the entry if it contains a valid value, if a character is present delete the whole entry
@@ -172,16 +207,28 @@ if __name__ == "__main__":
     power_entry.bind("<KeyRelease>", power_entry_event)
     power_entry.pack(side="left", padx=(0,8))
 
-    send_button = ctk.CTkButton(bottom_row, hover_color="#E9444F", fg_color="#CD1B2B", text="Send", command=power_data_send)
+    send_button = ctk.CTkButton(bottom_row, text="Send", command=power_data_send)
     send_button.pack(padx=16, pady=12)
 
+    color_mode_frame = ctk.CTkFrame(bottom_row, fg_color="transparent")
+    color_mode_frame.pack(anchor="sw", pady=(40,0))
+    color_button = ctk.CTkButton(color_mode_frame, 
+                                 text ="",
+                                 width=40,
+                                 height=40,
+                                 fg_color="transparent", 
+                                 hover_color="#969696", 
+                                 image = ctk.CTkImage(Image.open("./assets/light_mode.png"), size=(24, 24)),
+                                 command=lambda: color_mode("Light"))
+    color_button.pack(side="bottom", padx=8)
+
     # Right column content
-    label = ctk.CTkLabel(right_col, text="Live Data Graph", font=ctk.CTkFont(size=16, weight="bold"))
+    label = ctk.CTkLabel(right_col_top, text="Live Data Graph", font=ctk.CTkFont(size=16, weight="bold"))
     label.pack(padx=16, pady=16)
-    label = ctk.CTkLabel(right_col, text="Sampling rate", font=ctk.CTkFont(size=12))
+    label = ctk.CTkLabel(right_col_top, text="Sampling rate", font=ctk.CTkFont(size=12))
     label.pack(padx=16, pady=8)
 
-    controls_frame = ctk.CTkFrame(right_col, fg_color="transparent")
+    controls_frame = ctk.CTkFrame(right_col_top, fg_color="transparent")
     controls_frame.pack(fill="x", padx=16, anchor="n")
 
     # When slider changes, update entry
@@ -196,12 +243,12 @@ if __name__ == "__main__":
             if val.isdigit() and int(val) <= 1000 and int(val) >= 1:
                 sampler_instance.send_data("rate", rate_entry.get())
             else:
-                messagebox.showerror("Input Error", "Please enter a valid rate percentage (1-1000).")
+                tk.messagebox.showerror("Input Error", "Please enter a valid rate percentage (1-1000).")
         except Exception as e:
-            messagebox.showerror("Send Error", f"Could not send rate data:\n{str(e)}")
+            tk.messagebox.showerror("Send Error", f"Could not send rate data:\n{str(e)}")
     
     global rate_slider
-    rate_slider = ctk.CTkSlider(controls_frame, from_=0, to=1000, button_color="#CD1B2B", hover="#E9444F", command=rate_slider_event)
+    rate_slider = ctk.CTkSlider(controls_frame, from_=0, to=1000, command=rate_slider_event)
     rate_slider.pack(side="left", padx=(0,8), fill="x", expand=True)
 
     # First layer of checking the entry if it contains a valid value, if a character is present delete the whole entry
@@ -215,10 +262,10 @@ if __name__ == "__main__":
     global rate_entry
     rate_entry = ctk.CTkEntry(controls_frame, placeholder_text="Rate (ms)", width=80, height=28)
     rate_entry.bind("<KeyRelease>", rate_entry_event)
-    rate_entry.pack(side="left", padx=(0,8))
+    rate_entry.pack(side="left", padx=(0,16))
 
-    send_button = ctk.CTkButton(right_col, hover_color="#E9444F", fg_color="#CD1B2B", text="Send", command=rate_data_send)
-    send_button.pack(pady=16, padx=(0,8))
+    send_button = ctk.CTkButton(right_col_top, text="Send", command=rate_data_send)
+    send_button.pack(pady=16, padx=(0,16))
 
 
     # Global sampler instance and thread
@@ -237,42 +284,47 @@ if __name__ == "__main__":
                     try:
                         sampler_instance.write_file()
                     except Exception as e:
-                        messagebox.showerror("Sampler Error", f"Error: {str(e)}")
+                        tk.messagebox.showerror("Sampler Error", f"Error: {str(e)}")
 
                 # Start the sampler thread
                 sampler_thread = threading.Thread(target=run_sampler, daemon=True)
                 sampler_thread.start()
                 
-                start_btn.configure(state="disabled", fg_color="#350A0A", text="Sampler Running")
+                start_btn.configure(state="disabled",  text="Sampler Running", fg_color="#350A0A")
                 stop_btn.configure(state="normal", fg_color="#CD1B2B")
                 sampler_label.configure(text="Status: Running")
             except Exception as e:
-                messagebox.showerror("Sampler Error", f"Could not start sampler on {port}:\n{str(e)}")
+                tk.messagebox.showerror("Sampler Error", f"Could not start sampler on {port}:\n{str(e)}")
 
     def stop_sampler(stop_btn, start_btn, sampler_label):
         global sampler_thread
         if sampler_thread and sampler_thread.is_alive():
             sampler_thread.join(timeout=1)
-        start_btn.configure(state="normal", fg_color="#CD1B2B", text="Start Sampler")
+
+        files = os.listdir("./live_graphs")
+        for file in files:
+            src_path = os.path.join("./live_graphs", file)
+            dest_path = os.path.join("./graphs", file)
+            os.rename(src_path, dest_path)
+        
+        start_btn.configure(state="normal", text="Start Sampler", fg_color="#CD1B2B")
         stop_btn.configure(state="disabled", fg_color="#350A0A")
         sampler_label.configure(text="Status: Stopped")
 
     # place Start + Stop buttons side-by-side
-    buttons_frame = ctk.CTkFrame(right_col, fg_color="transparent")
+    buttons_frame = ctk.CTkFrame(right_col_top, fg_color="transparent")
     buttons_frame.pack(padx=16, pady=16)
 
     start_button = ctk.CTkButton(
         buttons_frame,
-        hover_color="#E9444F",
         fg_color="#CD1B2B",
         text="Start Sampler",
     )
     stop_button = ctk.CTkButton(
         buttons_frame,
-        hover_color="#E9444F",
-        fg_color="#350A0A",
         text="Stop Sampler",
-        state="disabled"
+        state="disabled",
+        fg_color="#350A0A"
     )
         
     sampler_label = ctk.CTkLabel(buttons_frame, text="Status: Stopped", font=ctk.CTkFont(size=12))
@@ -282,25 +334,38 @@ if __name__ == "__main__":
 
     sampler_label.pack(side="top", pady=16)
     start_button.pack(side="left", padx=16)
-    stop_button.pack(side="left")
+    stop_button.pack(side="left", padx=16)
+
+    def live_graphs():
+        for file in os.listdir("./live_graphs"):
+            if os.path.isfile(os.path.join(".", file)) and file.endswith(".txt"):
+                subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "graph.py"), file])
 
     def open_graphs():
-        for file in os.listdir("."):
+        for file in os.listdir("./graphs"):
             if os.path.isfile(os.path.join(".", file)) and file.endswith(".txt"):
                 subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "graph.py"), file])
 
     def delete_graphs():
-        bogz = messagebox.askquestion("Graph deletion", "This action will delete all graph files and cannot be undone. Are you sure you want to proceed?", icon='warning')
+        files = tk.filedialog.askopenfilenames(title="Select graph files to delete", initialdir="./graphs", filetypes=[("Text files", "*.txt")])
+        bogz = tk.messagebox.askquestion("Graph deletion", "This action will delete all graph files and cannot be undone. Are you sure you want to proceed?", icon='warning')
         if bogz == 'yes':
-            for file in os.listdir("."):
-                if os.path.isfile(os.path.join(".", file)) and file.endswith(".txt"):
-                    os.remove(os.path.join(".", file))
+            for file in files:
+                os.remove(file)
     
+    garph_label = ctk.CTkLabel(right_col_bottom, text="Graphs", font=ctk.CTkFont(size=16, weight="bold"))
+    garph_label.pack(pady=(16,0))
+
+    buttons_frame_graph = ctk.CTkFrame(right_col_bottom, fg_color="transparent")
+    buttons_frame_graph.pack(padx=16, pady=4)
     # Live Graph button
-    button = ctk.CTkButton(right_col, hover_color="#E9444F",  fg_color="#CD1B2B", text="Live Graph(s)", command=open_graphs)
-    button.pack(padx=16, pady=16)
-    button = ctk.CTkButton(right_col, hover_color="#E9444F",  fg_color="#CD1B2B", text="Delete Graph Files", command=delete_graphs)
-    button.pack(padx=16, pady=0)
-
-
+    graph_button = ctk.CTkButton(buttons_frame_graph, text="Live Graph(s)", command=live_graphs)
+    graph_button.pack(side="left", padx=16, pady=4)
+    live_button = ctk.CTkButton(buttons_frame_graph, text="Saved Graph(s)", command=open_graphs)
+    live_button.pack(side="left", padx=16, pady=4)
+    delete_button = ctk.CTkButton(right_col_bottom, text="Delete Graph Files", command=delete_graphs)
+    delete_button.pack(side="top", padx=16, pady=(4,16))
+    
+    global every_button
+    every_button = [serial_button, connect_button, disconnect_button, start_button, stop_button, send_button, graph_button, live_button, delete_button]
 app.mainloop()

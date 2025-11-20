@@ -31,3 +31,11 @@
 
 ## V0.4.1
     - Remove Herobrine
+
+## V0.5
+    - Reworked graph button
+        * Made seperate button for live and saved graph data files
+        * Added file dialog for graph deletion
+        * Added file dialog for choosing saved graph files
+    - WIP Light theme
+    - Moved pictures and icons into ./assets

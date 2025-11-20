@@ -33,6 +33,7 @@ class Sampler:
         return [port.device for port in serial.tools.list_ports.comports()]
     
     def write_file(self):
+        """Read data from the sampler device and write to a timestamped file."""
         time_rn = datetime.now().strftime("%Y%m%d_%H%M%S")
         start_time = time.time()
         if not self.is_connected():
@@ -48,7 +49,7 @@ class Sampler:
                         try:
                             for i in parts:
                                 subparts = i.split('=')
-                                with open(f'{subparts[0]}_{time_rn}.txt', 'a') as file:# pl.: voltage
+                                with open(f'./live_graphs/{subparts[0]}_{time_rn}.txt', 'a') as file: # pl.: voltage_20230601_153045.txt
                                     file.write(f'{round(time.time() - start_time, 3)},{subparts[1]}' + "\n")
                                     file.flush()
                         except ValueError:

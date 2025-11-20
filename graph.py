@@ -10,6 +10,7 @@ class Grapher:
         style.use('classic')
     
     def plot(self, file):
+        """Plot live graph from the given data file."""
         fig = plt.figure(figsize=(10, 6))
         ax1 = fig.add_subplot(1, 1, 1)
         title = file.split('_')[0]  # Extract title from filename prefix
