@@ -44,7 +44,7 @@ class Sampler:
                 if self.serial_connection.in_waiting > 0:
                     data = self.serial_connection.readline().decode('utf-8').strip()
                     if data:
-                        # Validate format: string(id),number,number
+                        # Validate format eg.:string(id)=number;string(id)=number~suffix
                         parts = data.split(';')
                         try:
                             for i in parts:
@@ -55,7 +55,7 @@ class Sampler:
                         except ValueError:
                             pass
         except Exception as e:
-            print(f"Error writing to file: {e}")
+            print(f"[Sampler] Error writing to file: {e}")
     
     def send_data(self,type, data):
         """Send data to the sampler device."""

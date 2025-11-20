@@ -23,7 +23,10 @@ if __name__ == "__main__":
             right_col_bottom.configure(fg_color="#2B2B2B")
             top_row.configure(fg_color="#2B2B2B")
             bottom_row.configure(fg_color="#2B2B2B")
-            power_entry.configure(fg_color="#3A3A3A")
+            power_entry.configure(border_color="#565B5E")
+            rate_entry.configure(border_color="#565B5E")
+            serial_button.configure(fg_color="#CD1B2B")
+            serial_button.configure(unselected_color="#565B5E")
             color_button.configure(
                 image = ctk.CTkImage(Image.open("./assets/light_mode.png"), size=(24, 24)),
                 hover_color="#969696",
@@ -35,7 +38,10 @@ if __name__ == "__main__":
             right_col_bottom.configure(fg_color="#E4E4E4")
             top_row.configure(fg_color="#E4E4E4")
             bottom_row.configure(fg_color="#E4E4E4")
-            power_entry.configure(fg_color="#3A3A3A")
+            power_entry.configure(border_color="#CD1B2B")
+            rate_entry.configure(border_color="#CD1B2B")
+            serial_button.configure(fg_color="#565B5E")
+            serial_button.configure(unselected_color="#CD1B2B")
             color_button.configure(
                 image = ctk.CTkImage(Image.open("./assets/dark_mode.png"), size=(24, 24)),
                 hover_color="#5F5F5F",
@@ -161,8 +167,8 @@ if __name__ == "__main__":
     connect_button = ctk.CTkButton(top_row, text="Connect", command=connect_serial)
     disconnect_button = ctk.CTkButton(top_row, fg_color="#350A0A", text="Disconnect", state="disabled", command=disconnect_serial)
     
-    connect_button.pack(side="left", padx=16)
-    disconnect_button.pack(side="right", padx=16)
+    connect_button.pack(side="left", padx=16, pady=(0,16))
+    disconnect_button.pack(side="right", padx=16, pady=(0,16))
 
     # Bottom row: placeholder for additional controls
     bottom_row = ctk.CTkFrame(left_col)
@@ -211,7 +217,7 @@ if __name__ == "__main__":
     send_button.pack(padx=16, pady=12)
 
     color_mode_frame = ctk.CTkFrame(bottom_row, fg_color="transparent")
-    color_mode_frame.pack(anchor="sw", pady=(40,0))
+    color_mode_frame.pack(anchor="sw", pady=(60,0))
     color_button = ctk.CTkButton(color_mode_frame, 
                                  text ="",
                                  width=40,
@@ -220,7 +226,7 @@ if __name__ == "__main__":
                                  hover_color="#969696", 
                                  image = ctk.CTkImage(Image.open("./assets/light_mode.png"), size=(24, 24)),
                                  command=lambda: color_mode("Light"))
-    color_button.pack(side="bottom", padx=8)
+    color_button.pack(padx=8)
 
     # Right column content
     label = ctk.CTkLabel(right_col_top, text="Live Data Graph", font=ctk.CTkFont(size=16, weight="bold"))
@@ -248,7 +254,7 @@ if __name__ == "__main__":
             tk.messagebox.showerror("Send Error", f"Could not send rate data:\n{str(e)}")
     
     global rate_slider
-    rate_slider = ctk.CTkSlider(controls_frame, from_=0, to=1000, command=rate_slider_event)
+    rate_slider = ctk.CTkSlider(controls_frame, from_=1, to=1000, command=rate_slider_event)
     rate_slider.pack(side="left", padx=(0,8), fill="x", expand=True)
 
     # First layer of checking the entry if it contains a valid value, if a character is present delete the whole entry
@@ -298,8 +304,7 @@ if __name__ == "__main__":
 
     def stop_sampler(stop_btn, start_btn, sampler_label):
         global sampler_thread
-        if sampler_thread and sampler_thread.is_alive():
-            sampler_thread.join(timeout=1)
+        sampler_instance.disconnect()
 
         files = os.listdir("./live_graphs")
         for file in files:
@@ -338,12 +343,22 @@ if __name__ == "__main__":
 
     def live_graphs():
         for file in os.listdir("./live_graphs"):
-            if os.path.isfile(os.path.join(".", file)) and file.endswith(".txt"):
+            file = os.path.join("./live_graphs/", file)
+            print(file)
+            if file == None:
+                tk.messagebox.showerror("Hiba", "No live graphs!")
+                return
+            if os.path.isfile(file) and file.endswith(".txt"):
+                print(os.path.join(os.path.dirname(__file__), "graph.py"))
                 subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "graph.py"), file])
 
     def open_graphs():
-        for file in os.listdir("./graphs"):
-            if os.path.isfile(os.path.join(".", file)) and file.endswith(".txt"):
+        files = tk.filedialog.askopenfilenames(title="Select graph files to open", initialdir="./graphs", filetypes=[("Text files", "*.txt")])
+        print(files)
+        for file in files:
+            file = file.split('/')[-1]
+            file = os.path.join("./graphs/", file)
+            if os.path.isfile(file) and file.endswith(".txt"):
                 subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "graph.py"), file])
 
     def delete_graphs():
@@ -366,6 +381,4 @@ if __name__ == "__main__":
     delete_button = ctk.CTkButton(right_col_bottom, text="Delete Graph Files", command=delete_graphs)
     delete_button.pack(side="top", padx=16, pady=(4,16))
     
-    global every_button
-    every_button = [serial_button, connect_button, disconnect_button, start_button, stop_button, send_button, graph_button, live_button, delete_button]
 app.mainloop()

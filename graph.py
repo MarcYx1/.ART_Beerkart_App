@@ -11,14 +11,19 @@ class Grapher:
     
     def plot(self, file):
         """Plot live graph from the given data file."""
+        file_path = file
+        if file.startswith("./live_graphs/"):
+            file = file[len("./live_graphs/"):]
+        elif file.startswith("./graphs/"):
+            file = file[len("./graphs/"):]
         fig = plt.figure(figsize=(10, 6))
         ax1 = fig.add_subplot(1, 1, 1)
         title = file.split('_')[0]  # Extract title from filename prefix
         
         # refresh the graph to show the data change live
-        def animate(i):  # Changed parameter from 'file' to 'i'
+        def animate(i):
             try:
-                graphData = open(file, 'r').read()  # Use the file from outer scope
+                graphData = open(file_path, 'r').read()  # Use the file from outer scope
             except FileNotFoundError:
                 # Create hidden root window for messagebox
                 root = tk.Tk()
