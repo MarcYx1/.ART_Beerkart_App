@@ -52,3 +52,10 @@
 
 ## V0.6.1
 - WIP better file selection window with custom tkinter
+
+## V0.7
+- Reworked file selection for better readability
+    * Opening live graph files, saved graph files and deleting graph files now open a dedicated window
+    * Follows theme of main window
+- Color theme now follows system
+- Added version indication label to GUI

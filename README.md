@@ -14,7 +14,7 @@
 - ✓ ~~**Open Graph(s)** button may ask user which graph files to open and indicate which are live~~
 - ✓ ~~**Delete Graph Files** button may ask user which graph files to delete, disallow deletion of live files~~
 - ✓ ~~Light theme~~
-- Maybe rework the saved graph choice menu, instead of just picking a file make a dedicated window that shows a clean list of files. (eg.: name | date | time)
+- ✓ ~~Maybe rework the saved graph choice menu, instead of just picking a file make a dedicated window that shows a clean list of files. (eg.: name | date | time)~~
 
 ### BUGS:
 - ~~Sampler is not stopped by the sample stop button~~

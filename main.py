@@ -1,8 +1,7 @@
 import customtkinter as ctk
-from PIL import Image
-import subprocess, sys, os
-import threading
 import tkinter as tk
+from PIL import Image
+import subprocess, sys, os, threading, darkdetect
 from sampler import Sampler as slr
     
 # Declare globals at module level
@@ -13,14 +12,16 @@ color_mode = "Dark"
 
 if __name__ == "__main__":
 
+    color_mode = "Dark" if darkdetect.isDark() else "Light"
+
     # CTK appearance
-    ctk.set_appearance_mode("Dark")
+    ctk.set_appearance_mode(color_mode)
     ctk.set_default_color_theme("./assets/ART_theme.json")
 
-
-    def color_mode_change():
+    # Logic for changing the theme with the color_button button
+    def color_mode_change(theme):
         global color_mode
-        if color_mode == "Light":
+        if theme == "Dark":
             color_mode = "Dark"
             ctk.set_appearance_mode("Dark")
             right_col_top.configure(fg_color="#2B2B2B")
@@ -34,8 +35,9 @@ if __name__ == "__main__":
             color_button.configure(
                 image = ctk.CTkImage(Image.open("./assets/light_mode.png"), size=(24, 24)),
                 hover_color="#969696",
+                command=lambda: color_mode_change("Light")
             )
-        elif color_mode == "Dark":
+        elif theme == "Light":
             color_mode = "Light"
             ctk.set_appearance_mode("Light")
             right_col_top.configure(fg_color="#E4E4E4")
@@ -49,6 +51,7 @@ if __name__ == "__main__":
             color_button.configure(
                 image = ctk.CTkImage(Image.open("./assets/dark_mode.png"), size=(24, 24)),
                 hover_color="#5F5F5F",
+                command=lambda: color_mode_change("Dark")
             )
 
     # CTK itself
@@ -83,7 +86,7 @@ if __name__ == "__main__":
 
     # Columns (2)
     content_frame = ctk.CTkFrame(app, fg_color="transparent")
-    content_frame.pack(fill="both", expand=True, padx=12, pady=12)
+    content_frame.pack(fill="both", expand=True, padx=(12,0), pady=12)
     content_frame.grid_rowconfigure(0, weight=1)
     content_frame.grid_columnconfigure(0, weight=1)
     content_frame.grid_columnconfigure(1, weight=1)
@@ -114,10 +117,9 @@ if __name__ == "__main__":
             serial_button.set(ports[0])
         else:
             serial_button.set("No Ports")
-
     # Top row: Serial Connection widgets
     top_row = ctk.CTkFrame(left_col)
-    top_row.grid(row=0, column=0, sticky="nsew", padx=0, pady=(0,4))
+    top_row.grid(row=0, column=0, sticky="nsew", padx=0, pady=(0,4), ipady=9)
 
     # COM / serial ports
     serial_label = ctk.CTkLabel(top_row, text="Serial Connection", font=ctk.CTkFont(size=16, weight="bold"))
@@ -201,6 +203,7 @@ if __name__ == "__main__":
         except Exception as e:
             tk.messagebox.showerror("Send Error", f"Could not send power data:\n{str(e)}")
     
+    # Slider for the power amount
     power_slider = ctk.CTkSlider(controls_frame, from_=0, to=100, command=power_slider_event)
     power_slider.pack(side="left", padx=(0,8), fill="x", expand=True)
 
@@ -212,6 +215,7 @@ if __name__ == "__main__":
         else:  # Remove last char if invalid
             power_entry.delete(0, ctk.END)
 
+    # Entry next to slider, shows value of slider, allows manual editing of value
     power_entry = ctk.CTkEntry(controls_frame, placeholder_text="Power (%)", width=80, height=28)
     power_entry.bind("<KeyRelease>", power_entry_event)
     power_entry.pack(side="left", padx=(0,8))
@@ -219,6 +223,7 @@ if __name__ == "__main__":
     send_button = ctk.CTkButton(bottom_row, text="Send", command=power_data_send)
     send_button.pack(padx=16, pady=12)
 
+    # Button to change theme of window
     color_mode_frame = ctk.CTkFrame(bottom_row, fg_color="transparent")
     color_mode_frame.pack(anchor="sw", pady=(60,0))
     color_button = ctk.CTkButton(color_mode_frame, 
@@ -228,8 +233,10 @@ if __name__ == "__main__":
                                  fg_color="transparent", 
                                  hover_color="#969696", 
                                  image = ctk.CTkImage(Image.open("./assets/light_mode.png"), size=(24, 24)),
-                                 command=lambda: color_mode_change())
+                                 command=lambda: color_mode_change("Light"))
     color_button.pack(padx=8)
+    version_label = ctk.CTkLabel(color_mode_frame, text="v0.7", font=ctk.CTkFont(size=10))
+    version_label.pack(padx=8, pady=(0,8))
 
     # Right column content
     label = ctk.CTkLabel(right_col_top, text="Live Data Graph", font=ctk.CTkFont(size=16, weight="bold"))
@@ -256,6 +263,7 @@ if __name__ == "__main__":
         except Exception as e:
             tk.messagebox.showerror("Send Error", f"Could not send rate data:\n{str(e)}")
     
+    # Slider for the rate amount
     global rate_slider
     rate_slider = ctk.CTkSlider(controls_frame, from_=1, to=1000, command=rate_slider_event)
     rate_slider.pack(side="left", padx=(0,8), fill="x", expand=True)
@@ -268,6 +276,7 @@ if __name__ == "__main__":
         else:  # Remove last char if invalid
             rate_entry.delete(0, ctk.END)
 
+    # Entry next to slider, shows value of slider, allows manual editing of value
     global rate_entry
     rate_entry = ctk.CTkEntry(controls_frame, placeholder_text="Rate (ms)", width=80, height=28)
     rate_entry.bind("<KeyRelease>", rate_entry_event)
@@ -280,7 +289,7 @@ if __name__ == "__main__":
     # Global sampler instance and thread
     sampler_instance = slr()
 
-    # Start and Stop Sampler button functions
+    # Starts sampler duh
     def start_sampler(start_btn, stop_btn, sampler_label):
         global sampler_thread
         port = serial_button.get()
@@ -305,6 +314,7 @@ if __name__ == "__main__":
             except Exception as e:
                 tk.messagebox.showerror("Sampler Error", f"Could not start sampler on {port}:\n{str(e)}")
 
+    # stops sampler duh
     def stop_sampler(stop_btn, start_btn, sampler_label):
         global sampler_thread
         sampler_instance.disconnect()
@@ -334,9 +344,11 @@ if __name__ == "__main__":
         state="disabled",
         fg_color="#350A0A"
     )
-        
+    
+    # sampler status label
     sampler_label = ctk.CTkLabel(buttons_frame, text="Status: Stopped", font=ctk.CTkFont(size=12))
 
+    # start stop button
     start_button.configure(command=lambda sl=sampler_label, sb=start_button, pb=stop_button: start_sampler(sb, pb, sl))
     stop_button.configure(command=lambda pb=stop_button, sb=start_button, sl=sampler_label: stop_sampler(pb, sb, sl))
 
@@ -344,40 +356,24 @@ if __name__ == "__main__":
     start_button.pack(side="left", padx=16)
     stop_button.pack(side="left", padx=16)
 
+    # open live graphs
     def live_graphs():
-        for file in os.listdir("./live_graphs"):
-            file = os.path.join("./live_graphs/", file)
-            print(file)
-            if file == None:
-                tk.messagebox.showerror("Hiba", "No live graphs!")
-                return
-            if os.path.isfile(file) and file.endswith(".txt"):
-                print(os.path.join(os.path.dirname(__file__), "graph.py"))
-                subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "graph.py"), file])
+        subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "filepicker.py"), color_mode, "open", "live"]) # <- since the filepicker handles both deletion and opening files, i need to specify which action to tike in sys.argv
 
-    def open_graphs():
-        files = os.listdir("./graphs")
-        print(files)
-        subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "filepicker.py"), color_mode])
-        # Hide the root window
-        # for file in files:
-        #     file = file.split('/')[-1]
-        #     file = os.path.join("./graphs/", file)
-        #     if os.path.isfile(file) and file.endswith(".txt"):
-        #         subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "graph.py"), file])
+    # open saved graphs, launches filepicker.py                                                     || this is so the filepicker.py follows theme
+    def open_graphs(): #                                                                            V 
+        subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "filepicker.py"), color_mode, "open", ""]) # <- since the filepicker handles both deletion and opening files, i need to specify which action to tike in sys.argv
+        print(color_mode)
 
     def delete_graphs():
-        files = tk.filedialog.askopenfilenames(title="Select graph files to delete", initialdir="./graphs", filetypes=[("Text files", "*.txt")])
-        bogz = tk.messagebox.askquestion("Graph deletion", "This action will delete all graph files and cannot be undone. Are you sure you want to proceed?", icon='warning')
-        if bogz == 'yes':
-            for file in files:
-                os.remove(file)
+        subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "filepicker.py"), color_mode, "delete", ""]) # <- since the filepicker handles both deletion and opening files, i need to specify which action to tike in sys.argv
     
     garph_label = ctk.CTkLabel(right_col_bottom, text="Graphs", font=ctk.CTkFont(size=16, weight="bold"))
     garph_label.pack(pady=(16,0))
 
     buttons_frame_graph = ctk.CTkFrame(right_col_bottom, fg_color="transparent")
     buttons_frame_graph.pack(padx=16, pady=4)
+
     # Live Graph button
     graph_button = ctk.CTkButton(buttons_frame_graph, text="Live Graph(s)", command=live_graphs)
     graph_button.pack(side="left", padx=16, pady=4)
@@ -385,5 +381,7 @@ if __name__ == "__main__":
     live_button.pack(side="left", padx=16, pady=4)
     delete_button = ctk.CTkButton(right_col_bottom, text="Delete Graph Files", command=delete_graphs)
     delete_button.pack(side="top", padx=16, pady=(4,16))
-    
+
+# CTk mainloop
+color_mode_change(color_mode)
 app.mainloop()

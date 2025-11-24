@@ -11,6 +11,7 @@ class Sampler:
         self.baudrate = baudrate
         self.timeout = timeout
         self.serial_connection = None
+        self.start_time = time.time()
 
     def connect(self, port):
         """Establish a serial connection to the sampler device."""
@@ -35,7 +36,6 @@ class Sampler:
     def write_file(self):
         """Read data from the sampler device and write to a timestamped file."""
         time_rn = datetime.now().strftime("%Y%m%d_%H%M%S")
-        start_time = time.time()
         if not self.is_connected():
             raise ConnectionError("Sampler device is not connected.")
         
@@ -50,7 +50,7 @@ class Sampler:
                             for i in parts:
                                 subparts = i.split('=')
                                 with open(f'./live_graphs/{subparts[0]}_{time_rn}.txt', 'a') as file: # pl.: voltage_20230601_153045.txt
-                                    file.write(f'{round(time.time() - start_time, 3)},{subparts[1]}' + "\n")
+                                    file.write(f'{round(time.time() - self.start_time, 3)},{subparts[1]}' + "\n")
                                     file.flush()
                         except ValueError:
                             pass
