@@ -49,3 +49,6 @@
 - graph.py now handles subdirectories correctly
 - Light theme implemented
 - Markdown formatting lol, i forgor 💀
+
+## V0.6.1
+- WIP better file selection window with custom tkinter

@@ -9,15 +9,19 @@ from sampler import Sampler as slr
 sampler_thread = None
 data_indicator_job = None  # Add this for the flashing animation
 
+color_mode = "Dark"
+
 if __name__ == "__main__":
 
     # CTK appearance
     ctk.set_appearance_mode("Dark")
     ctk.set_default_color_theme("./assets/ART_theme.json")
 
-    
-    def color_mode(type):
-        if type == "Dark":
+
+    def color_mode_change():
+        global color_mode
+        if color_mode == "Light":
+            color_mode = "Dark"
             ctk.set_appearance_mode("Dark")
             right_col_top.configure(fg_color="#2B2B2B")
             right_col_bottom.configure(fg_color="#2B2B2B")
@@ -30,9 +34,9 @@ if __name__ == "__main__":
             color_button.configure(
                 image = ctk.CTkImage(Image.open("./assets/light_mode.png"), size=(24, 24)),
                 hover_color="#969696",
-                command=lambda: color_mode("Light")
             )
-        elif type == "Light":
+        elif color_mode == "Dark":
+            color_mode = "Light"
             ctk.set_appearance_mode("Light")
             right_col_top.configure(fg_color="#E4E4E4")
             right_col_bottom.configure(fg_color="#E4E4E4")
@@ -45,7 +49,6 @@ if __name__ == "__main__":
             color_button.configure(
                 image = ctk.CTkImage(Image.open("./assets/dark_mode.png"), size=(24, 24)),
                 hover_color="#5F5F5F",
-                command=lambda: color_mode("Dark")
             )
 
     # CTK itself
@@ -225,7 +228,7 @@ if __name__ == "__main__":
                                  fg_color="transparent", 
                                  hover_color="#969696", 
                                  image = ctk.CTkImage(Image.open("./assets/light_mode.png"), size=(24, 24)),
-                                 command=lambda: color_mode("Light"))
+                                 command=lambda: color_mode_change())
     color_button.pack(padx=8)
 
     # Right column content
@@ -353,13 +356,15 @@ if __name__ == "__main__":
                 subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "graph.py"), file])
 
     def open_graphs():
-        files = tk.filedialog.askopenfilenames(title="Select graph files to open", initialdir="./graphs", filetypes=[("Text files", "*.txt")])
+        files = os.listdir("./graphs")
         print(files)
-        for file in files:
-            file = file.split('/')[-1]
-            file = os.path.join("./graphs/", file)
-            if os.path.isfile(file) and file.endswith(".txt"):
-                subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "graph.py"), file])
+        subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "filepicker.py"), color_mode])
+        # Hide the root window
+        # for file in files:
+        #     file = file.split('/')[-1]
+        #     file = os.path.join("./graphs/", file)
+        #     if os.path.isfile(file) and file.endswith(".txt"):
+        #         subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "graph.py"), file])
 
     def delete_graphs():
         files = tk.filedialog.askopenfilenames(title="Select graph files to delete", initialdir="./graphs", filetypes=[("Text files", "*.txt")])
