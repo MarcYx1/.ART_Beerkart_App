@@ -1,4 +1,3 @@
-*.txt
 sampler_test/
 __pycache__/
 progress.md
