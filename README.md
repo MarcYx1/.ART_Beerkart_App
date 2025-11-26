@@ -1,7 +1,7 @@
 # ART Beerkart Manager App
 
 ### TODO:
-- **TOP PRIORITY !!! CANbus connection and communication**
+- ~~**TOP PRIORITY !!! CANbus connection and communication**~~ (We're keeping serial, changing to CAN would take too much work for not a lot of pros)
 - ✓ ~~Serial connection~~
 - ✓ ~~Option to save sampled data (v0.3 technically makes this a thing, the data is being saved into a file)~~
 - ✓ ~~IDK yet but if we need to sample multiple data at once, multiple graphs at once, maybe when pressing live graph the user should be able to choose the graph he wants to open?~~

@@ -235,7 +235,7 @@ if __name__ == "__main__":
                                  image = ctk.CTkImage(Image.open("./assets/light_mode.png"), size=(24, 24)),
                                  command=lambda: color_mode_change("Light"))
     color_button.pack(padx=8)
-    version_label = ctk.CTkLabel(color_mode_frame, text="v0.7", font=ctk.CTkFont(size=10))
+    version_label = ctk.CTkLabel(color_mode_frame, text="v0.8", font=ctk.CTkFont(size=10))
     version_label.pack(padx=8, pady=(0,8))
 
     # Right column content

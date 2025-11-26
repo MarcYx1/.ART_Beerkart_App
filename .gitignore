@@ -1,5 +1,5 @@
 *.txt
-sampler_test.py
+sampler_test/
 __pycache__/
 progress.md
 .can_test.py
