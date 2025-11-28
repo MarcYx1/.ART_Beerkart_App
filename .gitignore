@@ -3,3 +3,8 @@ __pycache__/
 progress.md
 .can_test.py
 .sampler.py
+graphs/
+live_graphs/
+dist/
+build/
+*.spec

@@ -1,9 +1,20 @@
 import customtkinter as ctk
 import tkinter as tk
 from PIL import Image
-import subprocess, sys, os, threading, darkdetect
+import os, threading, darkdetect, sys
 from sampler import Sampler as slr
-    
+from filepicker import Filepicker as fp
+
+# Helper function to get the correct resource path for PyInstaller
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 # Declare globals at module level
 sampler_thread = None
 data_indicator_job = None  # Add this for the flashing animation
@@ -14,9 +25,13 @@ if __name__ == "__main__":
 
     color_mode = "Dark" if darkdetect.isDark() else "Light"
 
+    # Create directories if they don't exist yet
+    os.makedirs("./live_graphs", exist_ok=True)
+    os.makedirs("./graphs", exist_ok=True)
+
     # CTK appearance
     ctk.set_appearance_mode(color_mode)
-    ctk.set_default_color_theme("./assets/ART_theme.json")
+    ctk.set_default_color_theme(resource_path("assets/ART_theme.json"))
 
     # Logic for changing the theme with the color_button button
     def color_mode_change(theme):
@@ -33,7 +48,7 @@ if __name__ == "__main__":
             serial_button.configure(fg_color="#CD1B2B")
             serial_button.configure(unselected_color="#565B5E")
             color_button.configure(
-                image = ctk.CTkImage(Image.open("./assets/light_mode.png"), size=(24, 24)),
+                image = ctk.CTkImage(Image.open(resource_path("assets/light_mode.png")), size=(24, 24)),
                 hover_color="#969696",
                 command=lambda: color_mode_change("Light")
             )
@@ -49,7 +64,7 @@ if __name__ == "__main__":
             serial_button.configure(fg_color="#565B5E")
             serial_button.configure(unselected_color="#CD1B2B")
             color_button.configure(
-                image = ctk.CTkImage(Image.open("./assets/dark_mode.png"), size=(24, 24)),
+                image = ctk.CTkImage(Image.open(resource_path("assets/dark_mode.png")), size=(24, 24)),
                 hover_color="#5F5F5F",
                 command=lambda: color_mode_change("Dark")
             )
@@ -57,7 +72,7 @@ if __name__ == "__main__":
     # CTK itself
     app = ctk.CTk()
     app.title("Art Beerkart Manager")
-    app.iconbitmap("./assets/beer.ico")
+    app.iconbitmap(resource_path("assets/beer.ico"))
     app.geometry("770x565")
     app.resizable(False, False)
 
@@ -75,7 +90,7 @@ if __name__ == "__main__":
                     font=ctk.CTkFont(size=20, weight="bold"))
     
     # Logo
-    pil_img = Image.open("./assets/Art_logo.png")
+    pil_img = Image.open(resource_path("assets/Art_logo.png"))
     logo_image = ctk.CTkImage(pil_img, size=(93, 48))
     img_label = ctk.CTkLabel(top_frame, image=logo_image, text="")
     img_label.image = logo_image  # keep reference
@@ -232,10 +247,10 @@ if __name__ == "__main__":
                                  height=40,
                                  fg_color="transparent", 
                                  hover_color="#969696", 
-                                 image = ctk.CTkImage(Image.open("./assets/light_mode.png"), size=(24, 24)),
+                                 image = ctk.CTkImage(Image.open(resource_path("assets/light_mode.png")), size=(24, 24)),
                                  command=lambda: color_mode_change("Light"))
     color_button.pack(padx=8)
-    version_label = ctk.CTkLabel(color_mode_frame, text="v0.8", font=ctk.CTkFont(size=10))
+    version_label = ctk.CTkLabel(color_mode_frame, text="v0.9", font=ctk.CTkFont(size=10))
     version_label.pack(padx=8, pady=(0,8))
 
     # Right column content
@@ -358,15 +373,12 @@ if __name__ == "__main__":
 
     # open live graphs
     def live_graphs():
-        subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "filepicker.py"), color_mode, "open", "live"]) # <- since the filepicker handles both deletion and opening files, i need to specify which action to tike in sys.argv
-
-    # open saved graphs, launches filepicker.py                                                     || this is so the filepicker.py follows theme
-    def open_graphs(): #                                                                            V 
-        subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "filepicker.py"), color_mode, "open", ""]) # <- since the filepicker handles both deletion and opening files, i need to specify which action to tike in sys.argv
-        print(color_mode)
+        fp(color_mode=color_mode, file_action_mode="open", live_graph="live").app.mainloop()
+    def open_graphs():
+        fp(color_mode=color_mode, file_action_mode="open", live_graph="").app.mainloop()
 
     def delete_graphs():
-        subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "filepicker.py"), color_mode, "delete", ""]) # <- since the filepicker handles both deletion and opening files, i need to specify which action to tike in sys.argv
+        fp(color_mode=color_mode, file_action_mode="delete", live_graph="").app.mainloop()
     
     garph_label = ctk.CTkLabel(right_col_bottom, text="Graphs", font=ctk.CTkFont(size=16, weight="bold"))
     garph_label.pack(pady=(16,0))
@@ -382,6 +394,6 @@ if __name__ == "__main__":
     delete_button = ctk.CTkButton(right_col_bottom, text="Delete Graph Files", command=delete_graphs)
     delete_button.pack(side="top", padx=16, pady=(4,16))
 
-# CTk mainloop
-color_mode_change(color_mode)
-app.mainloop()
+    # CTk mainloop
+    color_mode_change(color_mode)
+    app.mainloop()

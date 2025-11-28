@@ -6,7 +6,6 @@ import numpy as np
 
 class Grapher:
     def __init__(self):
-        style.use('bmh')
         self.paused = False
         self.live = True
         self.xs = []
@@ -18,6 +17,7 @@ class Grapher:
         self.last_cursor_y = None
     
     def plot(self, file):
+        style.use('bmh')
         """Plot live graph from the given data file."""
         file_path = file
         if file.startswith("./live_graphs/"):
@@ -136,7 +136,7 @@ class Grapher:
                 graphData = open(file_path, 'r').read()  # Use the file from outer scope
             except FileNotFoundError:
                 # Create hidden root window for messagebox
-                exit()
+                fig.close()
             
             lines = graphData.split('\n')
             self.xs = []

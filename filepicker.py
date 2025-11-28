@@ -1,7 +1,19 @@
 import customtkinter as ctk
 from tkinter import messagebox
 from CTkListbox import *
-import os, sys, subprocess
+import os, sys, threading, subprocess
+import multiprocessing
+from graph import Grapher as gr  # Import graph module directly
+
+# Helper function to get the correct resource path for PyInstaller
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 class Filepicker:
     def __init__(self, color_mode, file_action_mode, live_graph):
@@ -11,12 +23,11 @@ class Filepicker:
         self.app = ctk.CTk()
         self.app.title("File Picker")
         self.app.geometry("400x300")
-        self.app.iconbitmap("./assets/beer.ico")
+        self.app.iconbitmap(resource_path("assets/beer.ico"))
         self.app.resizable(False, False)
 
         ctk.set_appearance_mode(color_mode)
-        ctk.set_default_color_theme("./assets/ART_theme.json")
-
+        ctk.set_default_color_theme(resource_path("assets/ART_theme.json"))
 
         self.optionlist = CTkListbox(self.app, multiple_selection=True, command=self.on_file_select)
         self.optionlist.pack(padx=10, pady=10, fill="both", expand=True)
@@ -75,8 +86,11 @@ class Filepicker:
 
     def open_file(self):
         for file in self.files_list:
-            subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "graph.py"), file])
-        exit()
+            # Use multiprocessing instead of threading for matplotlib
+            process = multiprocessing.Process(target=gr().plot, args=(file,))
+            process.daemon = True
+            process.start()
+        self.app.after(10, self.app.destroy)
     
     def delete_file(self):
         bogz = messagebox.askquestion("File selection", "Are you sure you want to select the chosen file(s)?", icon='warning')
@@ -87,9 +101,4 @@ class Filepicker:
                 os.remove(item)
             except Exception as e:
                 messagebox.showerror("Hiba", f"Unable to delete file(s): {e}")
-        messagebox.showinfo("Success", "Selected file(s) deleted successfully.")
-        exit()
-
-
-if __name__ == "__main__":
-    Filepicker(color_mode=sys.argv[1], file_action_mode=sys.argv[2], live_graph=sys.argv[3]).app.mainloop()
+        self.app.after_idle(self.app.destroy)

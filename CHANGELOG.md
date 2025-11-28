@@ -67,3 +67,7 @@
     * Live graph(s) can be paused by pressing SPACE now
         * This allows zooming into the live graph
     * Added interactive cursor readout that displays a line of which data its currently displaying and the data of the two axis eg.: (time,data) or (13.40,105.32).
+
+# V0.9
+- Changed from subprocess to multiprocessing
+- WIP build the app into an .exe
