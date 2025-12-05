@@ -104,6 +104,8 @@ An .exe build will be avaliable on release.
 - ✓ ~~**Delete Graph Files** button may ask user which graph files to delete, disallow deletion of live files~~
 - ✓ ~~Light theme~~
 - ✓ ~~Maybe rework the saved graph choice menu, instead of just picking a file make a dedicated window that shows a clean list of files. (eg.: name | date | time)~~
+- Live data reading, not just graph. (Either a seperate window for it or in the graph's title) **ALREADY WIP**
+- Sampling rate Hz not ms
 - Warning indicators in monitoring window for exceeding temp or voltage limits of a cell
 
 # KNOWN BUGS:
