@@ -4,6 +4,7 @@ from PIL import Image
 import os, threading, darkdetect, sys
 from sampler import Sampler as slr
 from filepicker import Filepicker as fp
+from monitoring_window import MonitoringWindow as mw
 
 # Helper function to get the correct resource path for PyInstaller
 def resource_path(relative_path):
@@ -197,7 +198,7 @@ if __name__ == "__main__":
     bottom_label = ctk.CTkLabel(bottom_row, text="Power limit", font=ctk.CTkFont(size=14, weight="bold"))
     bottom_label.pack(padx=16, pady=12)
 
-    # horizontal container for entry + slider + button
+    # horizontal container for power entry + slider + button
     controls_frame = ctk.CTkFrame(bottom_row, fg_color="transparent")
     controls_frame.pack(fill="x", padx=16)
 
@@ -250,7 +251,7 @@ if __name__ == "__main__":
                                  image = ctk.CTkImage(Image.open(resource_path("assets/light_mode.png")), size=(24, 24)),
                                  command=lambda: color_mode_change("Light"))
     color_button.pack(padx=8)
-    version_label = ctk.CTkLabel(color_mode_frame, text="v0.9", font=ctk.CTkFont(size=10))
+    version_label = ctk.CTkLabel(color_mode_frame, text="v0.9.1", font=ctk.CTkFont(size=10))
     version_label.pack(padx=8, pady=(0,8))
 
     # Right column content
@@ -328,6 +329,8 @@ if __name__ == "__main__":
                 sampler_label.configure(text="Status: Running")
             except Exception as e:
                 tk.messagebox.showerror("Sampler Error", f"Could not start sampler on {port}:\n{str(e)}")
+            
+            app.after(500, lambda: mw(color_mode=color_mode).main.mainloop())
 
     # stops sampler duh
     def stop_sampler(stop_btn, start_btn, sampler_label):
@@ -393,6 +396,30 @@ if __name__ == "__main__":
     live_button.pack(side="left", padx=16, pady=4)
     delete_button = ctk.CTkButton(right_col_bottom, text="Delete Graph Files", command=delete_graphs)
     delete_button.pack(side="top", padx=16, pady=(4,16))
+
+    # Application shutdown handling, this is important especially when built into an app. Before it didnt close the script just the TK window
+    def on_closing():
+        """Handle application shutdown - stop all threads and close everything"""
+        global sampler_thread, data_indicator_job
+        
+        # Stop sampler if running
+        if sampler_thread and sampler_thread.is_alive():
+            stop_sampler(stop_button, start_button, sampler_label)
+        
+        # Cancel any pending jobs
+        if data_indicator_job:
+            app.after_cancel(data_indicator_job)
+        
+        # Close serial connection if open
+        if sampler_instance.is_connected():
+            sampler_instance.disconnect()
+        
+        # Destroy the app and exit
+        app.destroy()
+        sys.exit()
+
+    # Set the protocol for when window is closed
+    app.protocol("WM_DELETE_WINDOW", on_closing)
 
     # CTk mainloop
     color_mode_change(color_mode)

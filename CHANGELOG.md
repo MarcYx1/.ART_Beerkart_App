@@ -71,3 +71,8 @@
 # V0.9
 - Changed from subprocess to multiprocessing
 - WIP build the app into an .exe
+
+# V0.9.1
+- Made a monitoring panel WIP still needs minor changes
+- Fixed an oversight by me, the background scripts werent actually shutting down when closing the app which I didnt realize since in VSC it wasnt an issue.
+- NOTE: May have to change from .txt data handling to .json since handling 48 txt files at the same time is very inefficient and slow.

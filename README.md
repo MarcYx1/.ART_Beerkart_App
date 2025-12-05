@@ -104,6 +104,7 @@ An .exe build will be avaliable on release.
 - ✓ ~~**Delete Graph Files** button may ask user which graph files to delete, disallow deletion of live files~~
 - ✓ ~~Light theme~~
 - ✓ ~~Maybe rework the saved graph choice menu, instead of just picking a file make a dedicated window that shows a clean list of files. (eg.: name | date | time)~~
+- Warning indicators in monitoring window for exceeding temp or voltage limits of a cell
 
 # KNOWN BUGS:
 - ~~Sampler is not stopped by the sample stop button~~
@@ -111,3 +112,4 @@ An .exe build will be avaliable on release.
 - ~~Disconnect button does not stop sampler either~~
 - Sampler needs to be connected to send power data, should be unrelated to sampler running.
 - ~~Light mode is buggy, I should’ve used styling instead of hardcoding colors~~
+- I did not realize handlind this much .txt files will be very inefficient. May have to rework the entire data system to work with one .json / cell instead of data type. (will see if the performance issue is noticable whe using it live)
